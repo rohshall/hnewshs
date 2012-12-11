@@ -10,42 +10,26 @@ import Network.URI
 
 import GHC.Generics (Generic)
 
-data Article = Article { title :: BS.ByteString,
-                         url :: BS.ByteString,
-                         id :: Integer,
-                         commentCount :: Integer,
-                         points :: Integer,
-                         postedAgo :: BS.ByteString,
-                         postedBy :: BS.ByteString
+data Article = Article { rank :: BS.ByteString,
+                         title :: BS.ByteString,
+                         url :: BS.ByteString
                } deriving (Show, Generic)
 
-data Articles = Articles { nextId :: Maybe Integer,
-                           items  :: [Article],
-                           version :: BS.ByteString,
-                           cachedOnUTC :: BS.ByteString
-                } deriving (Show, Generic)
-
-instance FromJSON Articles
 instance FromJSON Article
 
 main = do
-  feed <- openURL "http://api.ihackernews.com/page"
+  feed <- openURL "http://apify.heroku.com/api/hacker_news.json"
   let lazyFeed = BL.fromStrict feed
-  let parseResult = eitherDecode lazyFeed :: Either String Articles
+  let parseResult = eitherDecode lazyFeed :: Either String [Article]
   case parseResult of
-    Right articles -> printArticles articles
+    Right articles -> mapM_ printArticle articles
     Left s -> error ("Server error: " ++ s)
-
-
-printArticles :: Articles -> IO()
-printArticles articles = mapM_ printArticle $ items articles
 
 
 printArticle :: Article -> IO()
 printArticle article = do
-  putStrLn $ (show $ Main.id article) ++ ": " ++ (show $ title article)
+  putStrLn $ (show $ rank article) ++ ": " ++ (show $ title article)
   putStrLn $ show $ url article
-  putStrLn $ "(" ++ (show $ commentCount article) ++ ") (" ++ (show $ points article) ++ ")"
   putStrLn ""
 
 
