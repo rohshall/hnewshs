@@ -7,6 +7,8 @@ import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import Network.HTTP
 import Network.URI
+import Text.Regex.Posix
+import Text.Regex.Posix.ByteString
 
 import GHC.Generics (Generic)
 
@@ -26,13 +28,32 @@ data Articles = Articles { items  :: [Maybe Article] }
 instance FromJSON Articles
 instance FromJSON Article
 
+first :: (a, a, a) -> a
+first (x, _, _) = x
+
 main = do
-  feed <- openURL "http://hndroidapi.appspot.com/news/format/json/page/"
+  feed <- getFeed
+  putStrLn $ BS.unpack feed
   let lazyFeed = BL.fromStrict feed
   let articles = decode lazyFeed :: Maybe Articles
   case articles of
     Just as -> printArticles as
     Nothing -> error "No Articles"
+
+
+getTestFeed :: IO BS.ByteString
+getTestFeed = do
+  let feedProcessed = BS.pack "{\"items\":[{\"title\":\"How a load-balancing bug led to worldwide Chrome crashes\",\"url\":\"http://code.google.com/p/chromium/issues/detail?id=165171#c27\",\"score\":\"77 points\",\"user\":\"jpdus\",\"comments\":\"17 comments\",\"time\":\"3 hours ago\",\"item_id\":\"4904208\",\"description\":\"77 points by jpdus 3 hours ago  | 17 comments\"},{\"title\":\"New board in the Arduino Family: Esplora\",\"url\":\"http://arduino.cc/en/Main/ArduinoBoardEsplora\",\"score\":\"191 points\",\"user\":\"iamwil\",\"comments\":\"45 comments\",\"time\":\"21 hours ago\",\"item_id\":\"4900442\",\"description\":\"191 points by iamwil 21 hours ago  | 45 comments\"}]}"
+  return feedProcessed
+
+getFeed :: IO BS.ByteString
+getFeed = do
+  feed <- openURL "http://hndroidapi.appspot.com/news/format/json/page/"
+  let pattern = ",\\{[^\\}]*\\}\\]\\}$" :: BS.ByteString
+  let matchedFeed = feed =~ pattern :: (BS.ByteString, BS.ByteString, BS.ByteString)
+  let suffix = "]}" :: BS.ByteString
+  let feedProcessed = BS.append (first matchedFeed) suffix
+  return feedProcessed
 
 
 printArticles :: Articles -> IO()
