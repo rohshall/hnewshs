@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Aeson (FromJSON, decode)
-import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.ByteString.Char8 as BS
+import Data.Aeson (FromJSON, eitherDecode)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import Data.Maybe
 import Network.HTTP
 import Network.URI
@@ -31,10 +31,10 @@ instance FromJSON Article
 main = do
   feed <- openURL "http://api.ihackernews.com/page"
   let lazyFeed = BL.fromStrict feed
-  let articles = decode lazyFeed :: Maybe Articles
-  case articles of
-    Just as -> printArticles as
-    Nothing -> error "No Articles"
+  let parseResult = eitherDecode lazyFeed :: Either String Articles
+  case parseResult of
+    Right articles -> printArticles articles
+    Left s -> error ("Server error: " ++ s)
 
 
 printArticles :: Articles -> IO()
