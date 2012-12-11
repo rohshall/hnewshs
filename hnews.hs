@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Aeson (FromJSON, decode)
+import Data.Aeson (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
@@ -35,10 +35,10 @@ main = do
   feed <- getFeed
   putStrLn $ BS.unpack feed
   let lazyFeed = BL.fromStrict feed
-  let articles = decode lazyFeed :: Maybe Articles
-  case articles of
-    Just as -> printArticles as
-    Nothing -> error "No Articles"
+  let parseResult = eitherDecode lazyFeed :: Either String Articles
+  case parseResult of
+    Right articles -> printArticles articles
+    Left s -> error ("Server error: " ++ s)
 
 
 getTestFeed :: IO BS.ByteString
