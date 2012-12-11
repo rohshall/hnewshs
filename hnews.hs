@@ -12,22 +12,24 @@ import GHC.Generics (Generic)
 
 data Article = Article { title :: BS.ByteString,
                          url :: BS.ByteString,
-                         score :: BS.ByteString,
-                         user :: BS.ByteString,
-                         comments :: BS.ByteString,
-                         time :: BS.ByteString,
-                         item_id :: BS.ByteString,
-                         description :: BS.ByteString
+                         id :: Integer,
+                         commentCount :: Integer,
+                         points :: Integer,
+                         postedAgo :: BS.ByteString,
+                         postedBy :: BS.ByteString
                } deriving (Show, Generic)
 
-data Articles = Articles { items  :: [Maybe Article] }
-                deriving (Show, Generic)
+data Articles = Articles { nextId :: Maybe Integer,
+                           items  :: [Article],
+                           version :: BS.ByteString,
+                           cachedOnUTC :: BS.ByteString
+                } deriving (Show, Generic)
 
 instance FromJSON Articles
 instance FromJSON Article
 
 main = do
-  feed <- openURL "http://hndroidapi.appspot.com/news/format/json/page/"
+  feed <- openURL "http://api.ihackernews.com/page"
   let lazyFeed = BL.fromStrict feed
   let parseResult = eitherDecode lazyFeed :: Either String Articles
   case parseResult of
@@ -36,14 +38,14 @@ main = do
 
 
 printArticles :: Articles -> IO()
-printArticles articles = mapM_ printArticle $ catMaybes $ items articles
+printArticles articles = mapM_ printArticle $ items articles
 
 
 printArticle :: Article -> IO()
 printArticle article = do
-  putStrLn $ (show $ item_id article) ++ ": " ++ (show $ title article)
+  putStrLn $ (show $ Main.id article) ++ ": " ++ (show $ title article)
   putStrLn $ show $ url article
-  putStrLn $ "(" ++ (show $ comments article) ++ ") (" ++ (show $ score article) ++ ")"
+  putStrLn $ "(" ++ (show $ commentCount article) ++ ") (" ++ (show $ points article) ++ ")"
   putStrLn ""
 
 
