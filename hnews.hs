@@ -19,8 +19,7 @@ instance FromJSON Article
 
 main = do
   feed <- openURL "http://apify.heroku.com/api/hacker_news.json"
-  let lazyFeed = BL.fromStrict feed
-  let parseResult = eitherDecode lazyFeed :: Either String [Article]
+  let parseResult = eitherDecode feed :: Either String [Article]
   case parseResult of
     Right articles -> mapM_ printArticle articles
     Left s -> error ("Server error: " ++ s)
@@ -33,6 +32,6 @@ printArticle article = do
   putStrLn ""
 
 
-openURL :: String -> IO BS.ByteString
+openURL :: String -> IO BL.ByteString
 openURL url = getResponseBody =<< simpleHTTP (mkRequest GET (fromJust $ parseURI url))
 
